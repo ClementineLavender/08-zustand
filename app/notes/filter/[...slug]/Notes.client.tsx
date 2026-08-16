@@ -1,56 +1,79 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
+
 import { fetchNotes } from '@/lib/api';
 import NoteList from '@/components/NoteList/NoteList';
 import SearchBox from '@/components/SearchBox/SearchBox';
-import NoteForm from '@/components/NoteForm/NoteForm';
-import Modal from '@/components/Modal/Modal';
 import Pagination from '@/components/Pagination/Pagination';
+
 import css from './Notes.client.module.css';
 
 interface NotesClientProps {
   tag?: string;
 }
 
-export default function NotesClient({ tag }: NotesClientProps) {
+export default function NotesClient({
+  tag,
+}: NotesClientProps) {
   const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] =
+    useState('');
+
+  const [debouncedSearchQuery] =
+    useDebounce(searchQuery, 500);
 
   const { data } = useQuery({
-    queryKey: ['notes', page, debouncedSearchQuery, tag],
-    queryFn: () => fetchNotes(page, debouncedSearchQuery, tag),
+    queryKey: [
+      'notes',
+      page,
+      debouncedSearchQuery,
+      tag,
+    ],
+    queryFn: () =>
+      fetchNotes(
+        page,
+        debouncedSearchQuery,
+        tag
+      ),
     placeholderData: keepPreviousData,
     refetchOnMount: false,
   });
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = (
+    value: string
+  ) => {
     setSearchQuery(value);
     setPage(1);
   };
 
-  const handlePageClick = (event: { selected: number }) => {
-    setPage(event.selected + 1); 
+  const handlePageClick = (
+    event: { selected: number }
+  ) => {
+    setPage(event.selected + 1);
   };
 
   const notes = data?.notes ?? [];
-  const totalPages = data?.totalPages ?? 1;
+  const totalPages =
+    data?.totalPages ?? 1;
 
   return (
     <div className={css.container}>
       <div className={css.toolbar}>
-        <SearchBox value={searchQuery} onChange={handleSearchChange} />
-        <button 
-          type="button" 
-          className={css.button} 
-          onClick={() => setIsModalOpen(true)}
+        <SearchBox
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+
+        <Link
+          href="/notes/action/create"
+          className={css.button}
         >
           Create Note
-        </button>
+        </Link>
       </div>
 
       <NoteList notes={notes} />
@@ -61,12 +84,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
           onPageChange={handlePageClick}
           forcePage={page - 1}
         />
-      )}
-
-      {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-          <NoteForm onCancel={() => setIsModalOpen(false)} />
-        </Modal>
       )}
     </div>
   );
