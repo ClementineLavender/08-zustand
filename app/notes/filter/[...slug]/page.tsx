@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { fetchNotes } from '@/lib/api';
 import NotesClient from './Notes.client';
@@ -9,33 +9,28 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  
   const rawTag = slug?.[0];
-  const decodedTag = rawTag ? decodeURIComponent(rawTag) : undefined;
-  const tag = decodedTag === 'all' ? undefined : decodedTag;
+  const tag = rawTag === 'all' ? undefined : rawTag;
 
-  const titleTag = tag ? tag.charAt(0).toUpperCase() + tag.slice(1) : 'All';
+  const tagLabel = tag ? `${tag} notes` : 'All notes';
 
   return {
-    title: `Notes - ${titleTag}`,
-    description: `Filtered notes by tag: ${titleTag}`,
+    title: tagLabel,
+    description: `Browse ${tagLabel.toLowerCase()} in NoteHub`,
+    openGraph: {
+      title: tagLabel,
+      description: `Browse ${tagLabel.toLowerCase()} in NoteHub`,
+      url: `https://notehub.vercel.app/notes/filter/${rawTag ?? 'all'}`,
+      images: [{ url: 'https://ac.goit.global/fullstack/react/notehub-09-meta.jpg', width:1200, height:630, alt:'NoteHub' }],
+    },
   };
 }
 
 export default async function FilteredNotesPage({ params }: Props) {
   const { slug } = await params;
-
   const rawTag = slug?.[0];
-  const decodedTag = rawTag ? decodeURIComponent(rawTag) : undefined;
-  const tag = decodedTag === 'all' ? undefined : decodedTag;
-
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000,
-      },
-    },
-  });
+  const tag = rawTag === 'all' ? undefined : rawTag;
+  const queryClient = new QueryClient();
 
   await queryClient.prefetchQuery({
     queryKey: ['notes', 1, '', tag],

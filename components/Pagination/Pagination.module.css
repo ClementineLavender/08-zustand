@@ -45,3 +45,5 @@
   color: #fff !important;
   font-weight: 500;
 }
+
+.previous,.next,.break,.page{}.disabled{opacity:.5;pointer-events:none;}

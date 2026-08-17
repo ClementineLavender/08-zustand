@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { fetchNoteById } from '@/lib/api';
 import NoteDetailsClient from './NoteDetails.client';
@@ -7,33 +7,41 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-// Додаємо генерацію метаданих (title, description, openGraph)
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
 
   try {
     const note = await fetchNoteById(id);
 
-    const title = note?.title ? `Note: ${note.title}` : `Note #${id}`;
-    const description = note?.content
-      ? note.content.slice(0, 150)
-      : `Details and description for note ${id}`;
-
     return {
-      title,
-      description,
+      title: note.title,
+      description: note.content.slice(0, 160),
       openGraph: {
-        title,
-        description,
+        title: note.title,
+        description: note.content.slice(0, 160),
+        url: `https://notehub.vercel.app/notes/${id}`,
+        images: [{
+          url: 'https://ac.goit.global/fullstack/react/notehub-09-meta.jpg',
+          width: 1200,
+          height: 630,
+          alt: note.title,
+        }],
       },
     };
   } catch {
     return {
-      title: 'Note Details',
-      description: 'View note details',
+      title: 'Note not found',
+      description: 'The requested note could not be found.',
       openGraph: {
-        title: 'Note Details',
-        description: 'View note details',
+        title: 'Note not found',
+        description: 'The requested note could not be found.',
+        url: `https://notehub.vercel.app/notes/${id}`,
+        images: [{
+          url: 'https://ac.goit.global/fullstack/react/notehub-09-meta.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'NoteHub',
+        }],
       },
     };
   }

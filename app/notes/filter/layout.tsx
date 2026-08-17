@@ -5,11 +5,19 @@ interface FilterLayoutProps {
   sidebar: React.ReactNode;
 }
 
-export default function FilterLayout({ children, sidebar }: FilterLayoutProps) {
+export default function FilterLayout({
+  children,
+  sidebar,
+}: FilterLayoutProps) {
   return (
     <div className={css.container}>
-      <aside className={css.sidebar}>{sidebar}</aside>
-      <section className={css.content}>{children}</section>
+      <aside className={css.sidebar}>
+        {sidebar}
+      </aside>
+
+      <section className={css.notesWrapper}>
+        {children}
+      </section>
     </div>
   );
 }

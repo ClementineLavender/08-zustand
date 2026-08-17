@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -22,9 +22,6 @@ export default function NoteForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Додаємо стан для відстеження завантаження на клієнті
-  const [isMounted, setIsMounted] = useState(false);
-
   const draft = useNoteStore((state) => state.draft);
   const setDraft = useNoteStore((state) => state.setDraft);
   const clearDraft = useNoteStore((state) => state.clearDraft);
@@ -33,10 +30,6 @@ export default function NoteForm() {
     title?: string;
     content?: string;
   }>({});
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const mutation = useMutation({
     mutationFn: createNote,
@@ -101,9 +94,6 @@ export default function NoteForm() {
   const handleCancel = () => {
     router.back();
   };
-
-  // Поки компонент не змонтований у браузері, не рендеримо форму (уникаємо помилки Hydration)
-  if (!isMounted) return null;
 
   return (
     <form
