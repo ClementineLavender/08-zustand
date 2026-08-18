@@ -1,3 +1,5 @@
+/* components/Footer.module.css */
+
 .footer {
   padding: 20px;
   background-color: #f0f0f0;
@@ -22,5 +24,3 @@
 .footer a:hover {
   text-decoration: underline;
 }
-
-.content{display:flex;justify-content:center;gap:20px;}

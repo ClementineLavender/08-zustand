@@ -1,90 +1,60 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useDebounce } from 'use-debounce';
-
-import { fetchNotes } from '@/lib/api';
-import NoteList from '@/components/NoteList/NoteList';
-import SearchBox from '@/components/SearchBox/SearchBox';
-import Pagination from '@/components/Pagination/Pagination';
-
-import css from './Notes.client.module.css';
+import css from "@/app/notes/NotesPage.module.css";
+import { useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useDebouncedCallback } from "use-debounce";
+import { fetchNotes } from "@/lib/api";
+import SearchBox from "@/components/SearchBox/SearchBox";
+import Pagination from "@/components/Pagination/Pagination";
+import NoteList from "@/components/NoteList/NoteList";
+import Loader from "@/components/Loader/Loader";
+import ErrorMessage from "@/components/ErrorMessage/ErrorMessage";
+import Link from "next/link";
 
 interface NotesClientProps {
   tag?: string;
 }
 
-export default function NotesClient({
-  tag,
-}: NotesClientProps) {
+const NotesClient = ({ tag }: NotesClientProps) => {
   const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] =
-    useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [debouncedSearchQuery] =
-    useDebounce(searchQuery, 500);
-
-  const { data } = useQuery({
-    queryKey: [
-      'notes',
-      page,
-      debouncedSearchQuery,
-      tag,
-    ],
-    queryFn: () =>
-      fetchNotes(
-        page,
-        debouncedSearchQuery,
-        tag
-      ),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["notes", searchQuery, page, tag],
+    queryFn: () => fetchNotes(searchQuery, page, tag),
     placeholderData: keepPreviousData,
-    refetchOnMount: false,
   });
 
-  const handleSearchChange = (
-    value: string
-  ) => {
+  const updateSearchQuery = useDebouncedCallback((value: string) => {
     setSearchQuery(value);
     setPage(1);
-  };
-
-  const handlePageClick = (
-    event: { selected: number }
-  ) => {
-    setPage(event.selected + 1);
-  };
+  }, 300);
 
   const notes = data?.notes ?? [];
-  const totalPages =
-    data?.totalPages ?? 1;
+  const totalPages = data?.totalPages ?? 0;
 
   return (
-    <div className={css.container}>
-      <div className={css.toolbar}>
-        <SearchBox
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
-
-        <Link
-          href="/notes/action/create"
-          className={css.button}
-        >
-          Create Note
+    <div className={css.app}>
+      <header className={css.toolbar}>
+        <SearchBox onSearch={updateSearchQuery} />
+        {totalPages > 1 && (
+          <Pagination
+            totalPages={totalPages}
+            currentPage={page}
+            onPageChange={setPage}
+          />
+        )}
+        <Link href="/notes/action/create" className={css.button}>
+          Create note +
         </Link>
-      </div>
+      </header>
 
-      <NoteList notes={notes} />
-
-      {totalPages > 1 && (
-        <Pagination
-          pageCount={totalPages}
-          onPageChange={handlePageClick}
-          forcePage={page - 1}
-        />
-      )}
+      {isLoading && <Loader />}
+      {isError && <ErrorMessage />}
+      {notes.length > 0 && <NoteList notes={notes} />}
     </div>
   );
-}
+};
+
+export default NotesClient;

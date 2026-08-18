@@ -1,64 +1,34 @@
-'use client';
-
-import { useCallback, useEffect, useSyncExternalStore } from "react";
-import type { MouseEvent, ReactNode } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 import css from "./Modal.module.css";
 
-const subscribeToClient = () => () => undefined;
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
-
 interface ModalProps {
-  isOpen?: boolean;
-  onClose?: () => void;
-  children: ReactNode;
+  onClose: () => void;
+  children: React.ReactNode;
 }
 
-export default function Modal({ isOpen = true, onClose, children }: ModalProps) {
-  const mounted = useSyncExternalStore(
-    subscribeToClient,
-    getClientSnapshot,
-    getServerSnapshot,
-  );
-  const router = useRouter();
-
-  const handleClose = useCallback(() => {
-    if (onClose) {
-      onClose();
-    } else {
-      router.back();
-    }
-  }, [onClose, router]);
-
+export default function Modal({ onClose, children }: ModalProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        handleClose();
+        onClose();
       }
     };
 
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
-    }
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
     };
-  }, [isOpen, handleClose]);
+  }, [onClose]);
 
-  if (!isOpen || !mounted) return null;
-
-  const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      handleClose();
+      onClose();
     }
   };
-
-  const modalRoot = document.getElementById("modal-root") || document.body;
 
   return createPortal(
     <div
@@ -67,18 +37,8 @@ export default function Modal({ isOpen = true, onClose, children }: ModalProps) 
       aria-modal="true"
       onClick={handleBackdropClick}
     >
-      <div className={css.modal}>
-        <button
-          type="button"
-          className={css.closeButton}
-          onClick={handleClose}
-          aria-label="Close modal"
-        >
-          x
-        </button>
-        {children}
-      </div>
+      <div className={css.modal}>{children}</div>
     </div>,
-    modalRoot,
+    document.body,
   );
 }

@@ -1,94 +1,42 @@
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import { createNote } from '@/lib/api';
-import { NoteTag } from '@/types/note';
-import { useNoteStore } from '@/lib/store/noteStore';
-
-import css from './NoteForm.module.css';
-
-const TAGS: NoteTag[] = [
-  'Work',
-  'Personal',
-  'Meeting',
-  'Shopping',
-  'Todo',
-];
+"use client";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import css from "./NoteForm.module.css";
+import { createNote } from "../../lib/api";
+import type { NoteTag } from "../../types/note";
+import { useNoteStore } from "@/lib/store/noteStore";
 
 export default function NoteForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-
   const draft = useNoteStore((state) => state.draft);
   const setDraft = useNoteStore((state) => state.setDraft);
   const clearDraft = useNoteStore((state) => state.clearDraft);
 
-  const [errors, setErrors] = useState<{
-    title?: string;
-    content?: string;
-  }>({});
-
-  const mutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: createNote,
-
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['notes'],
-      });
-
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
       clearDraft();
       router.back();
     },
   });
 
-  const validate = () => {
-    const nextErrors: {
-      title?: string;
-      content?: string;
-    } = {};
-
-    if (!draft.title.trim()) {
-      nextErrors.title = 'Title is required';
-    } else if (draft.title.length < 3) {
-      nextErrors.title = 'Title must be at least 3 characters';
-    } else if (draft.title.length > 50) {
-      nextErrors.title = 'Title must be at most 50 characters';
-    }
-
-    if (draft.content.length > 500) {
-      nextErrors.content =
-        'Content must be at most 500 characters';
-    }
-
-    setErrors(nextErrors);
-
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const handleSubmit = (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
-    e.preventDefault();
-
-    if (!validate()) return;
-
-    mutation.mutate(draft);
-  };
-
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement |
-      HTMLTextAreaElement |
-      HTMLSelectElement
-    >
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
-    setDraft({
-      ...draft,
-      [e.target.name]: e.target.value,
-    });
+    setDraft({ [event.target.name]: event.target.value });
+  };
+
+  const handleSubmit = (formData: FormData) => {
+    const values = {
+      title: formData.get("title") as string,
+      content: formData.get("content") as string,
+      tag: formData.get("tag") as NoteTag,
+    };
+    createMutation.mutate(values);
   };
 
   const handleCancel = () => {
@@ -96,92 +44,58 @@ export default function NoteForm() {
   };
 
   return (
-    <form
-      className={css.form}
-      onSubmit={handleSubmit}
-    >
+    <form action={handleSubmit} className={css.form}>
       <div className={css.formGroup}>
-        <label htmlFor="title">
-          Title
-        </label>
-
+        <label htmlFor="title">Title</label>
         <input
           id="title"
-          name="title"
           type="text"
-          value={draft.title}
+          name="title"
+          defaultValue={draft.title}
           onChange={handleChange}
           className={css.input}
         />
-
-        {errors.title && (
-          <span className={css.error}>
-            {errors.title}
-          </span>
-        )}
       </div>
 
       <div className={css.formGroup}>
-        <label htmlFor="tag">
-          Tag
-        </label>
-
-        <select
-          id="tag"
-          name="tag"
-          value={draft.tag}
-          onChange={handleChange}
-          className={css.select}
-        >
-          {TAGS.map((tag) => (
-            <option
-              key={tag}
-              value={tag}
-            >
-              {tag}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className={css.formGroup}>
-        <label htmlFor="content">
-          Content
-        </label>
-
+        <label htmlFor="content">Content</label>
         <textarea
           id="content"
           name="content"
-          rows={5}
-          value={draft.content}
+          rows={8}
+          defaultValue={draft.content}
           onChange={handleChange}
           className={css.textarea}
         />
+      </div>
 
-        {errors.content && (
-          <span className={css.error}>
-            {errors.content}
-          </span>
-        )}
+      <div className={css.formGroup}>
+        <label htmlFor="tag">Tag</label>
+        <select
+          id="tag"
+          name="tag"
+          defaultValue={draft.tag}
+          onChange={handleChange}
+          className={css.select}
+        >
+          <option value="Todo">Todo</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Shopping">Shopping</option>
+        </select>
       </div>
 
       <div className={css.actions}>
         <button
           type="button"
-          onClick={handleCancel}
           className={css.cancelButton}
+          onClick={handleCancel}
         >
           Cancel
         </button>
-
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className={css.submitButton}
-        >
-          {mutation.isPending
-            ? 'Saving...'
-            : 'Create Note'}
+        <button type="submit" className={css.submitButton}>
+          Create note
         </button>
       </div>
     </form>

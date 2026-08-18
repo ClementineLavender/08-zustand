@@ -1,38 +1,50 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import css from './NotePreview.module.css';
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { fetchNoteById } from "@/lib/api";
+import Modal from "@/components/Modal/Modal";
+import css from "./NotePreview.module.css";
 
-import { fetchNoteById } from '@/lib/api';
-
-interface NotePreviewClientProps {
+interface NotePreviewProps {
   id: string;
 }
 
-export default function NotePreviewClient({ id }: NotePreviewClientProps) {
-  const { data: note, isLoading, isError } = useQuery({
-    queryKey: ['note', id],
+const NotePreviewClient = ({ id }: NotePreviewProps) => {
+  const router = useRouter();
+
+  const {
+    data: note,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["note", id],
     queryFn: () => fetchNoteById(id),
     refetchOnMount: false,
   });
 
-  if (isLoading) {
-    return <div className={css.container}>Loading note details...</div>;
-  }
-
-  if (isError || !note) {
-    return <div className={css.container}>Failed to load note preview.</div>;
-  }
+  const handleClose = () => {
+    router.back();
+  };
 
   return (
-    <div className={css.container}>
-      <div className={css.item}>
-        <div className={css.header}>
-          <h2>{note.title}</h2>
+    <Modal onClose={handleClose}>
+      {isLoading && <p>Loading, please wait...</p>}
+      {error && <p>Something went wrong.</p>}
+      {note && (
+        <div className={css.container}>
+          <div className={css.item}>
+            <div className={css.header}>
+              <h2>{note.title}</h2>
+            </div>
+            <p className={css.tag}>{note.tag}</p>
+            <p className={css.content}>{note.content}</p>
+            <p className={css.date}>{note.createdAt}</p>
+          </div>
         </div>
-        <p className={css.tag}>Tag: {note.tag}</p>
-        <div className={css.content}>{note.content}</div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
-}
+};
+
+export default NotePreviewClient;
