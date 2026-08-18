@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import css from "./NoteForm.module.css";
 import { createNote } from "../../lib/api";
 import type { NoteTag } from "../../types/note";
@@ -14,14 +13,6 @@ export default function NoteForm() {
   const draft = useNoteStore((state) => state.draft);
   const setDraft = useNoteStore((state) => state.setDraft);
   const clearDraft = useNoteStore((state) => state.clearDraft);
-
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setTimeout(() => {
-      setIsHydrated(useNoteStore.persist.hasHydrated());
-    }, 0);
-  }, []);
 
   const createMutation = useMutation({
     mutationFn: createNote,
@@ -53,9 +44,9 @@ export default function NoteForm() {
     router.back();
   };
 
-  const titleValue = isHydrated ? draft.title : "";
-  const contentValue = isHydrated ? draft.content : "";
-  const tagValue = isHydrated ? draft.tag : "Todo";
+  const titleValue = draft?.title || "";
+  const contentValue = draft?.content || "";
+  const tagValue = draft?.tag || "Todo";
 
   return (
     <form action={handleSubmit} className={css.form}>
