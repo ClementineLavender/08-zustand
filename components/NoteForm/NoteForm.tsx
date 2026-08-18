@@ -1,6 +1,8 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import css from "./NoteForm.module.css";
 import { createNote } from "../../lib/api";
 import type { NoteTag } from "../../types/note";
@@ -12,6 +14,14 @@ export default function NoteForm() {
   const draft = useNoteStore((state) => state.draft);
   const setDraft = useNoteStore((state) => state.setDraft);
   const clearDraft = useNoteStore((state) => state.clearDraft);
+
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setIsHydrated(useNoteStore.persist.hasHydrated());
+    }, 0);
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: createNote,
@@ -25,7 +35,7 @@ export default function NoteForm() {
   const handleChange = (
     event: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     setDraft({ [event.target.name]: event.target.value });
   };
@@ -43,6 +53,10 @@ export default function NoteForm() {
     router.back();
   };
 
+  const titleValue = isHydrated ? draft.title : "";
+  const contentValue = isHydrated ? draft.content : "";
+  const tagValue = isHydrated ? draft.tag : "Todo";
+
   return (
     <form action={handleSubmit} className={css.form}>
       <div className={css.formGroup}>
@@ -51,7 +65,7 @@ export default function NoteForm() {
           id="title"
           type="text"
           name="title"
-          defaultValue={draft.title}
+          value={titleValue}
           onChange={handleChange}
           className={css.input}
         />
@@ -63,7 +77,7 @@ export default function NoteForm() {
           id="content"
           name="content"
           rows={8}
-          defaultValue={draft.content}
+          value={contentValue}
           onChange={handleChange}
           className={css.textarea}
         />
@@ -74,7 +88,7 @@ export default function NoteForm() {
         <select
           id="tag"
           name="tag"
-          defaultValue={draft.tag}
+          value={tagValue}
           onChange={handleChange}
           className={css.select}
         >
